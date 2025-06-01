@@ -57,3 +57,10 @@ class Calculator:
         b = values.pop()
         a = values.pop()
         values.append(self.operators[operator](a, b))
+
+
+if __name__ == '__main__':
+    calculator = Calculator()
+    expression = "3 + 7 * 2"
+    result = calculator.evaluate(expression)
+    print(f"{expression} = {result}")

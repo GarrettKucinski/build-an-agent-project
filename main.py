@@ -41,7 +41,7 @@ schema_get_files_info = types.FunctionDeclaration(
         properties={
             "directory": types.Schema(
                 type=types.Type.STRING,
-                description="The directory to list files from, relative to the working directory. If not provided, lists files in the working directory itself which is '.'.",
+                description="The directory to list files from, relative to the working directory. If not provided, list files in the working directory itself always specified as the argument '.'",
             ),
         },
     ),
@@ -101,31 +101,41 @@ available_functions = types.Tool(
     ]
 )
 
-response = client.models.generate_content(
-    model="gemini-2.0-flash-001",
-    contents=messages,
-    config=types.GenerateContentConfig(
-        system_instruction=system_prompt, tools=[available_functions]
-    ),
-)
-
 set_verbose = sys.argv[-1] == "--verbose"
+
+for i in range(20):
+    last_message = messages[-1] if messages else None
+
+    if (
+        last_message
+        and last_message.parts[-1].function_call is None
+        and last_message.parts[-1].function_response is None
+        and i > 0
+    ):
+        # if i == 20:
+        # print("GEMINI RESPONSE:", last_message[-1].text)
+        print(last_message)
+        break
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-001",
+        contents=messages,
+        config=types.GenerateContentConfig(
+            system_instruction=system_prompt, tools=[available_functions]
+        ),
+    )
+
+    for candidate in response.candidates:
+        message_content = candidate.content
+        messages.append(message_content)
+        if message_content.parts[-1].function_call is not None:
+            function_call_result = call_function(
+                message_content.parts[-1].function_call, set_verbose
+            )
+            messages.append(function_call_result)
+
 if set_verbose:
     print(f"Working on: {user_prompt}")
     print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
     print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
-
-if response.function_calls:
-    for fn in response.function_calls:
-        function_call_result = call_function(fn, set_verbose)
-
-        try:
-            response = function_call_result.parts[0].function_response.response
-            if response and set_verbose:
-                print(f"-> {response.get("result")}")
-
-        except Exception as e:
-            raise RuntimeError(f"Fatal error in function call: {e}")
-
-else:
-    print(response.text)
+    print(f"Candidates: {response.candidates}")

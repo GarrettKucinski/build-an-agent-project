@@ -3,15 +3,13 @@ import os
 
 def show_files(directory) -> list[str]:
     files: list[str] = os.listdir(directory)
-    for file in files:
-        if file == "__pycache__":
-            continue
+    # for file in files:
+    #     if file == "__pycache__":
+    #         continue
 
-        file_path = os.path.join(directory, file)
-        is_dir = os.path.isdir(file_path)
-        file_size = 0 if is_dir else os.path.getsize(file_path)
-
-        print(f"- {file}: file_size={file_size} bytes, is_dir={is_dir}")
+    # file_path = os.path.join(directory, file)
+    # is_dir = os.path.isdir(file_path)
+    # file_size = 0 if is_dir else os.path.getsize(file_path)
 
     return files
 
